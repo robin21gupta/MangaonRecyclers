@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Login · Mangaon Recycleers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+          --bg:           #090e1a;
+          --bg-card:      #0f1829;
+          --border:       rgba(255,255,255,0.08);
+          --border-focus: #0ea5e9;
+          --primary:      #0ea5e9;
+          --primary-dark: #0284c7;
+          --primary-glow: rgba(14,165,233,0.2);
+          --accent:       #10b981;
+          --ink:          #f1f5f9;
+          --ink-muted:    rgba(255,255,255,0.45);
+          --danger:       #f87171;
+          --font:         "Plus Jakarta Sans", system-ui, sans-serif;
+          --font-display: "Syne", system-ui, sans-serif;
+          --font-mono:    "IBM Plex Mono", monospace;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; }
+        body {
+          font-family: var(--font);
+          background: var(--bg);
+          color: var(--ink);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          min-height: 100dvh;
+          -webkit-font-smoothing: antialiased;
+          padding: 1rem;
+        }
+
+        /* Animated grid background */
+        body::before {
+          content: "";
+          position: fixed; inset: 0;
+          background-image:
+            linear-gradient(rgba(14,165,233,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14,165,233,0.03) 1px, transparent 1px);
+          background-size: 48px 48px;
+          animation: gridShift 20s linear infinite;
+          pointer-events: none;
+        }
+        @keyframes gridShift { 0% { transform: translateY(0); } 100% { transform: translateY(48px); } }
+
+        /* Glow orb */
+        body::after {
+          content: "";
+          position: fixed;
+          width: 600px; height: 600px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(14,165,233,0.08) 0%, transparent 70%);
+          top: -200px; right: -200px;
+          pointer-events: none;
+        }
+
+        .login-wrap {
+          position: relative; z-index: 1;
+          width: 100%; max-width: 400px;
+          animation: fadeUp 0.4s ease both;
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Brand */
+        .login-brand {
+          display: flex; align-items: center; gap: .875rem;
+          margin-bottom: 2rem; justify-content: center;
+        }
+        .brand-mark {
+          width: 44px; height: 44px; border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+          box-shadow: 0 4px 20px rgba(14,165,233,0.4); flex-shrink: 0;
+        }
+        .brand-mark svg { width: 22px; height: 22px; fill: #fff; }
+        .brand-title {
+          display: block; font-family: var(--font-display);
+          font-weight: 700; font-size: 1.05rem; color: #fff;
+          letter-spacing: -.02em; line-height: 1.2;
+        }
+        .brand-subtitle {
+          display: block; font-family: var(--font-mono);
+          font-size: .68rem; color: var(--ink-muted);
+          letter-spacing: .08em; text-transform: uppercase; margin-top: 2px;
+        }
+
+        /* Card */
+        .login-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 18px; padding: 2rem;
+          box-shadow:
+            0 0 0 1px rgba(14,165,233,0.05),
+            0 24px 48px rgba(0,0,0,0.4),
+            0 8px 16px rgba(0,0,0,0.2);
+        }
+        .login-heading {
+          font-family: var(--font-display); font-size: 1.4rem;
+          font-weight: 700; margin: 0 0 .4rem; letter-spacing: -.03em;
+        }
+        .login-subheading {
+          font-size: .82rem; color: var(--ink-muted); margin: 0 0 1.75rem;
+        }
+
+        /* Error message — clean, no raw JSON */
+        .error-msg {
+          display: none;
+          background: rgba(248,113,113,0.1);
+          border: 1px solid rgba(248,113,113,0.2);
+          color: var(--danger); border-radius: 8px;
+          padding: .65rem .875rem; font-size: .82rem;
+          margin-bottom: 1.125rem;
+          display: none;
+        }
+        .error-msg.show { display: flex; align-items: center; gap: .5rem; animation: shake .3s ease; }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25%       { transform: translateX(-5px); }
+          75%       { transform: translateX(5px); }
+        }
+        .error-icon { font-size: 1rem; flex-shrink: 0; }
+
+        /* Fields */
+        .field { margin-bottom: 1.125rem; }
+        .field label {
+          display: block; font-size: .75rem; font-weight: 600;
+          color: rgba(255,255,255,0.7); margin-bottom: .375rem; letter-spacing: .02em;
+        }
+        .input-wrap { position: relative; }
+        .input-icon {
+          position: absolute; left: .875rem; top: 50%;
+          transform: translateY(-50%); color: var(--ink-muted); pointer-events: none;
+        }
+        .field input {
+          width: 100%; padding: .65rem .875rem .65rem 2.5rem;
+          font-family: var(--font); font-size: .9rem;
+          background: rgba(255,255,255,0.04);
+          border: 1.5px solid var(--border);
+          border-radius: 10px; color: var(--ink); outline: none;
+          transition: border-color .15s, box-shadow .15s, background .15s;
+          -webkit-appearance: none;
+        }
+        .field input::placeholder { color: var(--ink-muted); }
+        .field input:focus {
+          border-color: var(--border-focus);
+          background: rgba(14,165,233,0.05);
+          box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        .toggle-password {
+          position: absolute; right: .875rem; top: 50%;
+          transform: translateY(-50%);
+          background: none; border: none; color: var(--ink-muted);
+          cursor: pointer; padding: .2rem; transition: color .15s;
+        }
+        .toggle-password:hover { color: var(--ink); }
+
+        /* Button */
+        .btn-login {
+          width: 100%; padding: .7rem 1rem;
+          font-family: var(--font); font-size: .9rem; font-weight: 700;
+          background: var(--primary); color: #fff;
+          border: none; border-radius: 10px; cursor: pointer;
+          box-shadow: 0 2px 8px rgba(14,165,233,0.35), 0 6px 20px rgba(14,165,233,0.2);
+          transition: all .15s ease;
+          display: flex; align-items: center; justify-content: center; gap: .5rem;
+          margin-top: .25rem;
+        }
+        .btn-login:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-login:active:not(:disabled) { transform: translateY(0); }
+        .btn-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+        /* Spinner */
+        .spinner {
+          width: 16px; height: 16px;
+          border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+          border-radius: 50%; animation: spin .7s linear infinite; display: none;
+        }
+        .btn-login.loading .spinner { display: block; }
+        .btn-login.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Footer */
+        .login-footer {
+          text-align: center; margin-top: 1.5rem;
+          font-family: var(--font-mono); font-size: .7rem;
+          color: var(--ink-muted); letter-spacing: .04em;
+        }
+
+        /* Responsive */
+        @media (max-width: 440px) {
+          .login-card { padding: 1.5rem 1.25rem; }
+          .login-heading { font-size: 1.2rem; }
+          .login-brand { margin-bottom: 1.5rem; }
+        }
+        @media (max-width: 360px) {
+          body { padding: .75rem; }
+          .login-card { padding: 1.25rem 1rem; }
+        }
+        @media (max-height: 600px) {
+          body { align-items: flex-start; padding-top: 1.5rem; }
+          .login-brand { margin-bottom: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="login-wrap">
+
+    <!-- Brand -->
+    <div class="login-brand">
+        <div class="brand-mark">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4C7.58 4 4 7.58 4 12s3.58 8 8 8a7.996 7.996 0 0 0 7.54-5.35c.22-.61-.14-1.28-.78-1.41-.52-.11-1.04.17-1.22.67A5.998 5.998 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+        </div>
+        <div>
+            <span class="brand-title">Mangaon Recyclers</span>
+            <span class="brand-subtitle">Management System</span>
+        </div>
+    </div>
+
+    <div class="login-card">
+        <h1 class="login-heading">Welcome back</h1>
+        <p class="login-subheading">Sign in to access the dashboard</p>
+
+        <!-- Clean error message — no raw JSON ever shown -->
+        <div class="error-msg" id="login-error">
+            <span class="error-icon">&#9888;</span>
+            <span id="error-text"></span>
+        </div>
+
+        <form id="login-form" autocomplete="on" novalidate>
+            <div class="field">
+                <label for="username">Username</label>
+                <div class="input-wrap">
+                    <span class="input-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </span>
+                    <input id="username" name="username" type="text"
+                           placeholder="Enter username"
+                           autocomplete="username"
+                           autocapitalize="none"
+                           spellcheck="false" required/>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <span class="input-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </span>
+                    <input id="password" name="password" type="password"
+                           placeholder="Enter password"
+                           autocomplete="current-password" required/>
+                    <button type="button" class="toggle-password" id="toggle-pw" aria-label="Toggle password visibility">
+                        <svg id="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login" id="login-btn">
+                <div class="spinner"></div>
+                <span class="btn-text">Sign in</span>
+            </button>
+        </form>
+    </div>
+
+    <div class="login-footer">MANGAON RECYCLERS &middot; SECURE LOGIN</div>
+</div>
+
+<script>
+    /* ── Redirect if already logged in ── */
+    (function() {
+        var token = localStorage.getItem("token");
+        if (!token) return;
+        try {
+            var payload = JSON.parse(atob(token.split(".")[1]));
+            if (payload.exp && payload.exp > Math.floor(Date.now() / 1000)) {
+                window.location.href = "/index.html"; return;
+            }
+        } catch(e) {}
+        ["token","username","role"].forEach(function(k){ localStorage.removeItem(k); });
+    })();
+
+    /* ── Eye toggle ── */
+    document.getElementById("toggle-pw").addEventListener("click", function() {
+        var inp = document.getElementById("password");
+        var svg = document.getElementById("eye-icon");
+        if (inp.type === "password") {
+            inp.type = "text";
+            /* Crossed eye SVG */
+            svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        } else {
+            inp.type = "password";
+            svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        }
+    });
+
+    /* ── Show error — NEVER shows raw JSON or HTTP codes ── */
+    function showError(msg) {
+        document.getElementById("error-text").textContent = msg;
+        document.getElementById("login-error").classList.add("show");
+    }
+    function hideError() {
+        document.getElementById("login-error").classList.remove("show");
+    }
+
+    /* ── Human-readable error messages ── */
+    function friendlyError(status, rawText) {
+        if (status === 401 || status === 403) return "Invalid username or password. Please try again.";
+        if (status === 404) return "Login service not found. Please contact support.";
+        if (status === 500) return "Server error. Please try again in a moment.";
+        if (status === 0 || !status)  return "Cannot connect to server. Check your internet connection.";
+        /* Try to extract a message from JSON without exposing raw response */
+        try {
+            var j = JSON.parse(rawText);
+            if (j.message && typeof j.message === "string" && j.message.length < 120) return j.message;
+            if (j.error   && typeof j.error   === "string" && j.error.length   < 120) return j.error;
+        } catch(e) {}
+        return "Login failed. Please check your credentials and try again.";
+    }
+
+    /* ── Login submit ── */
+    document.getElementById("login-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        hideError();
+
+        var btn      = document.getElementById("login-btn");
+        var username = document.getElementById("username").value.trim();
+        var password = document.getElementById("password").value;
+
+        if (!username) { showError("Please enter your username."); return; }
+        if (!password) { showError("Please enter your password."); return; }
+
+        btn.classList.add("loading");
+        btn.disabled = true;
+
+        try {
+            var res = await fetch("/api/auth/login", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ username: username, password: password })
+            });
+
+            var rawText = await res.text();
+
+            if (!res.ok) {
+                showError(friendlyError(res.status, rawText));
+                return;
+            }
+
+            /* Parse token from response */
+            var data = {};
+            try { data = JSON.parse(rawText); } catch(_) { data = { token: rawText.trim() }; }
+
+            var token =
+                data.token        ||
+                data.accessToken  ||
+                data.jwt          ||
+                data.jwtToken     ||
+                data.access_token ||
+                (typeof data === "string" ? data : null);
+
+            if (!token) {
+                showError("Login failed. Could not retrieve session token.");
+                return;
+            }
+
+            /* Extract role */
+            var role = "";
+            if (data.role)             role = data.role;
+            else if (data.roles)       role = Array.isArray(data.roles) ? data.roles[0] : data.roles;
+            else if (data.authorities) role = Array.isArray(data.authorities) ? data.authorities[0] : data.authorities;
+            else {
+                try {
+                    var pl = JSON.parse(atob(token.split(".")[1]));
+                    role = pl.role || pl.roles || pl.authorities || pl.auth || "";
+                    if (Array.isArray(role)) role = role[0];
+                } catch(_) {}
+            }
+
+            localStorage.setItem("token",    token);
+            localStorage.setItem("username", data.username || username);
+            localStorage.setItem("role",     String(role));
+
+            setTimeout(function() { window.location.href = "/index.html"; }, 80);
+
+        } catch(err) {
+            /* Network / fetch error */
+            showError("Cannot connect to server. Please check your connection.");
+        } finally {
+            btn.classList.remove("loading");
+            btn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

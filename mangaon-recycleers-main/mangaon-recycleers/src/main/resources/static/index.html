@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Mangaon Recycleers · Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" href="app.css"/>
+    <style>
+        .stat-card { cursor: pointer; }
+        .dash-search-wrap { display:flex; align-items:center; gap:.4rem; }
+        .dash-search-wrap-inner { position:relative; display:flex; align-items:center; }
+        .dash-search-input {
+          padding:.32rem .75rem .32rem 2rem; font-size:.8rem;
+          border:1px solid var(--border-strong); border-radius:8px;
+          background:var(--bg-card); color:var(--ink); outline:none; width:200px;
+          font-family:var(--font); transition:border-color .14s,box-shadow .14s;
+        }
+        .dash-search-input::placeholder { color:var(--ink-faint); }
+        .dash-search-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-glow); }
+        .dash-search-wrap .si-icon { position:absolute; left:.6rem; color:var(--ink-muted); font-size:.8rem; pointer-events:none; }
+        .dash-recent-grid { display:flex; flex-direction:column; gap:1rem; }
+        @media (max-width: 576px) {
+          .dash-search-input { width: 130px; font-size:.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+<div class="app-shell">
+
+    <!-- ══ SIDEBAR ══ -->
+    <aside class="app-sidebar">
+        <div class="app-brand">
+            <div class="brand-mark"><i class="bi bi-recycle"></i></div>
+            <div>
+                <span class="brand-title">Mangaon Recyclers</span>
+                <span class="brand-subtitle">v2 · Management</span>
+            </div>
+        </div>
+        <nav class="app-nav">
+            <ul class="nav-list">
+                <li><button class="nav-link" data-tab="dashboard"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></button></li>
+            </ul>
+
+            <span class="nav-label">Data Input</span>
+            <ul class="nav-list">
+                <li><button class="nav-link" data-tab="tyreInwards"><i class="bi bi-box-arrow-in-down"></i><span>Master Inward</span></button></li>
+                <li><button class="nav-link" data-tab="materialOutwards"><i class="bi bi-box-arrow-up-right"></i><span>Master Outward</span></button></li>
+            </ul>
+
+            <span class="nav-label">Onboarding Master</span>
+            <ul class="nav-list">
+                <li><button class="nav-link" data-tab="clients"><i class="bi bi-building"></i><span>Client</span></button></li>
+                <li><button class="nav-link" data-tab="suppliers"><i class="bi bi-truck"></i><span>Vendor</span></button></li>
+                <li id="nav-uses-li"><button class="nav-link" data-tab="uses"><i class="bi bi-tags"></i><span>Uses</span></button></li>
+            </ul>
+
+            <div id="nav-reports-section">
+                <span class="nav-label">Reports</span>
+                <ul class="nav-list">
+                    <li><a href="/purchasesaledetail.html" class="nav-link"><i class="bi bi-journal-text"></i><span>Purchase &amp; Sale Trail</span></a></li>
+                    <li><a href="/dashboard-graph.html" class="nav-link"><i class="bi bi-bar-chart-line"></i><span>Graph Analysis</span></a></li>
+                </ul>
+            </div>
+
+            <div id="nav-admin-section" style="display:none;">
+                <span class="nav-label">Admin</span>
+                <ul class="nav-list">
+                    <li><a href="/admin.html" class="nav-link"><i class="bi bi-people"></i><span>User Management</span></a></li>
+                </ul>
+            </div>
+        </nav>
+        <div class="app-sidebar-footer">
+            <span class="footer-label">&copy; <span id="year"></span> Mangaon Recyclers LLP.<br>All rights reserved.</span>
+        </div>
+    </aside>
+
+    <!-- ══ CONTENT ══ -->
+    <div class="app-content">
+        <header class="app-topbar">
+            <button class="topbar-menu-btn" id="sidebar-toggle" aria-label="Open menu">
+                <i class="bi bi-list"></i>
+            </button>
+            <div>
+                <h1 class="topbar-title" id="topbar-section-title">Dashboard</h1>
+                <p class="topbar-subtitle" id="topbar-section-sub">Overview of operations</p>
+            </div>
+            <div class="topbar-actions">
+                <span class="badge-pill"><i class="bi bi-person-circle"></i><span id="topbar-username">Admin</span></span>
+                <button class="btn-logout" id="logout-btn"><i class="bi bi-box-arrow-right"></i><span>Logout</span></button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div id="toast" class="toast-msg" role="status" aria-live="polite"></div>
+
+            <!-- ══════════════════════════════════════
+                 DASHBOARD
+            ══════════════════════════════════════ -->
+            <section class="content-panel d-none" id="panel-dashboard">
+                <div class="dash-stats">
+                    <div class="stat-card" id="dash-card-vendors" title="Click to view Vendors">
+                        <div class="stat-icon stat-icon--blue"><i class="bi bi-truck"></i></div>
+                        <div><span class="stat-val" id="dash-vendor-count">—</span><span class="stat-label">Vendors</span></div>
+                    </div>
+                    <div class="stat-card" id="dash-card-clients" title="Click to view Clients">
+                        <div class="stat-icon stat-icon--green"><i class="bi bi-building"></i></div>
+                        <div><span class="stat-val" id="dash-client-count">—</span><span class="stat-label">Clients</span></div>
+                    </div>
+                    <div class="stat-card" id="dash-card-inwards" title="Click to view Inward Entries">
+                        <div class="stat-icon stat-icon--amber"><i class="bi bi-box-arrow-in-down"></i></div>
+                        <div><span class="stat-val" id="dash-inward-count">—</span><span class="stat-label">Inward Entries</span></div>
+                    </div>
+                    <div class="stat-card" id="dash-card-outwards" title="Click to view Outward Entries">
+                        <div class="stat-icon stat-icon--purple"><i class="bi bi-box-arrow-up-right"></i></div>
+                        <div><span class="stat-val" id="dash-outward-count">—</span><span class="stat-label">Outward Entries</span></div>
+                    </div>
+                </div>
+
+                <div class="dash-recent-grid">
+                    <!-- Recent Inward -->
+                    <div class="card-table">
+                        <div class="table-toolbar">
+                            <span class="table-toolbar-title"><i class="bi bi-box-arrow-in-down"></i> Recent Inward <span class="badge-count" id="dash-inward-badge">5</span></span>
+                            <div class="dash-search-wrap">
+                                <div class="dash-search-wrap-inner">
+                                    <i class="bi bi-search si-icon"></i>
+                                    <input type="text" id="dash-inward-search" class="dash-search-input" placeholder="Search material, vendor…"/>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" id="dash-inward-view-all">View All <i class="bi bi-arrow-right"></i></button>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="table-modern">
+                                <thead><tr><th>#</th><th>Material</th><th>Vendor</th><th>Vehicle</th><th>Driver</th><th>Date</th><th>Type</th><th>Qty</th><th>Net kg</th><th>Rate</th><th>Total ₹</th></tr></thead>
+                                <tbody id="dash-table-inwards"><tr><td colspan="11" class="table-loading">Loading</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Recent Outward — ✅ FIX 8: added Type + Qty columns -->
+                    <div class="card-table">
+                        <div class="table-toolbar">
+                            <span class="table-toolbar-title"><i class="bi bi-box-arrow-up-right"></i> Recent Outward <span class="badge-count" id="dash-outward-badge">5</span></span>
+                            <div class="dash-search-wrap">
+                                <div class="dash-search-wrap-inner">
+                                    <i class="bi bi-search si-icon"></i>
+                                    <input type="text" id="dash-outward-search" class="dash-search-input" placeholder="Search material, client…"/>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" id="dash-outward-view-all">View All <i class="bi bi-arrow-right"></i></button>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="table-modern">
+                                <thead><tr><th>#</th><th>Material</th><th>Client</th><th>Use</th><th>Vehicle</th><th>Driver</th><th>Date</th><th>Type</th><th>Qty</th><th>Net kg</th><th>Rate</th><th>Total ₹</th></tr></thead>
+                                <tbody id="dash-table-outwards"><tr><td colspan="12" class="table-loading">Loading</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════
+                 MASTER INWARD
+            ══════════════════════════════════════ -->
+            <section class="content-panel d-none" id="panel-tyreInwards">
+                <div class="panel-header">
+                    <div><h2 class="panel-title">Master Inward</h2><p class="panel-desc">Record incoming tyres and materials from vendors</p></div>
+                    <button class="btn btn-outline-primary btn-sm" data-action="reload-tyreInwards"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+                </div>
+                <div class="panel-grid">
+                    <div class="card-form"><div class="card-body">
+                        <h3 class="card-form-title">New Inward Entry</h3>
+                        <form id="form-tyreInward" class="form-fields">
+                            <div class="form-section-title">Material &amp; Vendor</div>
+                            <div>
+                                <label class="form-label">Material Type</label>
+                                <select class="form-select" name="materialType">
+                                    <option value="">— Select —</option>
+                                    <option value="PYROLYSIS_OIL">Pyrolysis Oil</option>
+                                    <option value="CRUMB_RUBBER">Crumb Rubber</option>
+                                    <option value="WOOD">Wood</option>
+                                    <option value="OTHERS">Others</option>
+                                </select>
+                            </div>
+                            <div><label class="form-label">Vendor <span class="req">*</span></label><select class="form-select" name="supplierId" id="ti-supplier"><option value="">— Select Vendor —</option></select></div>
+                            <div><label class="form-label">Use</label><select class="form-select" name="useId" id="ti-use"><option value="">— Select Use —</option></select></div>
+                            <div><label class="form-label">Vehicle Number</label><input class="form-control" name="vehicleNumber" placeholder="e.g. MH-12-AB-1234"/></div>
+                            <div><label class="form-label">Date <span class="req">*</span></label><input class="form-control" name="date" type="date" id="ti-date"/></div>
+
+                            <div class="form-section-title">Driver Details</div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">Driver Name</label><input class="form-control" name="driverName" placeholder="Driver full name" maxlength="50"/></div>
+                                <div><label class="form-label">Driver Mobile</label><input class="form-control" name="driverNumber" placeholder="Driver mobile" maxlength="20"/></div>
+                            </div>
+
+                            <div class="form-section-title">Weight &amp; Quantity</div>
+                            <div class="form-row">
+                                <div><label class="form-label">Gross (kg)</label><input id="ti-gross" class="form-control" name="grossWeight" placeholder="0.000"/></div>
+                                <div><label class="form-label">Tare (kg)</label><input id="ti-tare" class="form-control" name="tareWeight" placeholder="0.000"/></div>
+                                <div><label class="form-label">Net (kg)<span class="auto-badge">Auto</span></label><input id="ti-net" class="form-control" readonly placeholder="Auto"/></div>
+                            </div>
+                            <div class="form-row">
+                                <div><label class="form-label">Quantity</label><input class="form-control" name="quantity" type="number" min="0" placeholder="0"/></div>
+                                <div style="grid-column:span 2"><label class="form-label">Type / Grade</label><input class="form-control" name="type" placeholder="Tyre type / grade"/></div>
+                            </div>
+
+                            <div class="form-section-title">Rate &amp; Amount</div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">Rate (₹/kg)</label><input id="ti-rate" class="form-control" name="rate" placeholder="Rate per kg"/></div>
+                                <div><label class="form-label">Total (₹)<span class="auto-badge">Auto</span></label><input id="ti-total" class="form-control" readonly placeholder="Auto"/></div>
+                            </div>
+
+                            <div class="form-section-title">Invoice / Challan</div>
+                            <div class="inv-section">
+                                <div>
+                                    <label class="form-label">Invoice Number<span class="opt-badge">Optional</span></label>
+                                    <input class="form-control" id="ti-inv-num" placeholder="e.g. INV-2025-001" maxlength="100"/>
+                                </div>
+                                <div>
+                                    <label class="form-label">Invoice Photo<span class="opt-badge">Optional</span></label>
+                                    <div class="inv-dropzone" id="ti-dz">
+                                        <i class="bi bi-file-earmark-image dz-icon"></i>
+                                        <div class="dz-label"><strong>Drag &amp; drop</strong> invoice photo here</div>
+                                        <div class="dz-hint">JPG · PNG · WEBP · PDF — max 10 MB</div>
+                                        <div class="dz-btns">
+                                            <button type="button" class="dz-btn dz-btn-cam" id="ti-btn-cam"><i class="bi bi-camera-fill"></i> Camera</button>
+                                            <button type="button" class="dz-btn dz-btn-gal" id="ti-btn-gal"><i class="bi bi-image"></i> Gallery</button>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="ti-file-cam" accept="image/*" capture="environment" style="display:none"/>
+                                    <input type="file" id="ti-file-gal" accept="image/*,application/pdf" style="display:none"/>
+                                    <div class="inv-preview" id="ti-inv-preview" style="display:none">
+                                        <img id="ti-preview-img" src="" alt="preview"/>
+                                        <div class="inv-preview-bar">
+                                            <span class="inv-fname" id="ti-fname">—</span>
+                                            <span class="inv-status" id="ti-inv-status"></span>
+                                            <button type="button" class="inv-view-btn" id="ti-view-btn" style="display:none"><i class="bi bi-eye"></i> View</button>
+                                            <button type="button" class="inv-remove-btn" id="ti-remove-btn"><i class="bi bi-x-lg"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div><label class="form-label">Notes</label><textarea class="form-control" name="notes" rows="2" placeholder="Optional notes"></textarea></div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save Entry</button>
+                                <button type="button" class="btn btn-secondary" id="ti-cancel-btn" style="display:none"><i class="bi bi-x-lg"></i> Cancel</button>
+                            </div>
+                            <p class="form-feedback" id="tyreInward-msg"></p>
+                        </form>
+                    </div></div>
+
+                    <div class="card-table">
+                        <div class="table-toolbar">
+                            <span class="table-toolbar-title">Inward Entries</span>
+                            <div class="toolbar-search">
+                                <div class="search-input-wrap"><i class="bi bi-search si-icon"></i><input type="text" id="inward-search" placeholder="Search vendor, vehicle…" class="search-input"/></div>
+                                <button class="btn btn-sm btn-secondary" data-action="clear-inward-search"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                            <span class="table-count-badge" id="inward-count-badge"></span>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="table-modern">
+                                <thead><tr><th>#</th><th>Material</th><th>Vendor</th><th>Vehicle</th><th>Driver</th><th>Date</th><th>Type</th><th>Qty</th><th>Net kg</th><th>Rate</th><th>Total ₹</th><th>Invoice</th><th class="th-actions">Actions</th></tr></thead>
+                                <tbody id="table-tyreInwards"><tr><td colspan="13" class="table-loading">Loading</td></tr></tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer-note"><i class="bi bi-info-circle"></i> All records via API.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════
+                 MASTER OUTWARD
+            ══════════════════════════════════════ -->
+            <section class="content-panel d-none" id="panel-materialOutwards">
+                <div class="panel-header">
+                    <div><h2 class="panel-title">Master Outward</h2><p class="panel-desc">Record sales — pyrolysis oil, carbon powder, steel</p></div>
+                    <button class="btn btn-outline-primary btn-sm" data-action="reload-materialOutwards"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+                </div>
+                <div class="panel-grid">
+                    <div class="card-form"><div class="card-body">
+                        <h3 class="card-form-title">New Outward Entry</h3>
+                        <form id="form-materialOutward" class="form-fields">
+                            <div class="form-section-title">Sale Details</div>
+                            <div>
+                                <label class="form-label">Material Type</label>
+                                <select class="form-select" name="materialType">
+                                    <option value="PYROLYSIS_OIL">Pyrolysis Oil</option>
+                                    <option value="CARBON_POWER">Carbon Powder</option>
+                                    <option value="STEEL">Steel</option>
+                                </select>
+                            </div>
+                            <div><label class="form-label">Client</label><select class="form-select" name="clientId" id="mo-client"><option value="">— Select Client —</option></select></div>
+                            <div><label class="form-label">Use</label><select class="form-select" name="useId" id="mo-use"><option value="">— Select Use —</option></select></div>
+                            <div><label class="form-label">Vehicle Number</label><input class="form-control" name="vehicleNumber" placeholder="e.g. MH-12-AB-1234"/></div>
+                            <div><label class="form-label">Date of Sale</label><input class="form-control" name="dateOfSale" type="date" id="mo-date"/></div>
+
+                            <div class="form-section-title">Driver Details</div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">Driver Name</label><input class="form-control" name="driverName" placeholder="Driver full name" maxlength="50"/></div>
+                                <div><label class="form-label">Driver Mobile</label><input class="form-control" name="driverNumber" placeholder="Driver mobile" maxlength="20"/></div>
+                            </div>
+
+                            <div class="form-section-title">Weight &amp; Quantity</div>
+                            <div class="form-row">
+                                <div><label class="form-label">Gross (kg)</label><input id="mo-gross" class="form-control" name="grossWeight" placeholder="0.000"/></div>
+                                <div><label class="form-label">Tare (kg)</label><input id="mo-tare" class="form-control" name="tareWeight" placeholder="0.000"/></div>
+                                <div><label class="form-label">Net (kg)<span class="auto-badge">Auto</span></label><input id="mo-net" class="form-control" readonly placeholder="Auto"/></div>
+                            </div>
+                            <!-- ✅ FIX 8: Quantity + Type fields added to outward form -->
+                            <div class="form-row">
+                                <div><label class="form-label">Quantity</label><input class="form-control" name="quantity" type="number" min="0" placeholder="0"/></div>
+                                <div style="grid-column:span 2"><label class="form-label">Type / Grade</label><input class="form-control" name="type" placeholder="Material type / grade"/></div>
+                            </div>
+
+                            <div class="form-section-title">Rate &amp; Amount</div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">Rate (₹/kg)</label><input id="mo-rate" class="form-control" name="rate" placeholder="Rate per kg"/></div>
+                                <div><label class="form-label">Total (₹)<span class="auto-badge">Auto</span></label><input id="mo-total" class="form-control" readonly placeholder="Auto"/></div>
+                            </div>
+
+                            <div class="form-section-title">Invoice / Challan</div>
+                            <div class="inv-section">
+                                <div>
+                                    <label class="form-label">Invoice Number<span class="opt-badge">Optional</span></label>
+                                    <input class="form-control" id="mo-inv-num" placeholder="e.g. INV-2025-001" maxlength="100"/>
+                                </div>
+                                <div>
+                                    <label class="form-label">Invoice Photo<span class="opt-badge">Optional</span></label>
+                                    <div class="inv-dropzone" id="mo-dz">
+                                        <i class="bi bi-file-earmark-image dz-icon"></i>
+                                        <div class="dz-label"><strong>Drag &amp; drop</strong> invoice photo here</div>
+                                        <div class="dz-hint">JPG · PNG · WEBP · PDF — max 10 MB</div>
+                                        <div class="dz-btns">
+                                            <button type="button" class="dz-btn dz-btn-cam" id="mo-btn-cam"><i class="bi bi-camera-fill"></i> Camera</button>
+                                            <button type="button" class="dz-btn dz-btn-gal" id="mo-btn-gal"><i class="bi bi-image"></i> Gallery</button>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="mo-file-cam" accept="image/*" capture="environment" style="display:none"/>
+                                    <input type="file" id="mo-file-gal" accept="image/*,application/pdf" style="display:none"/>
+                                    <div class="inv-preview" id="mo-inv-preview" style="display:none">
+                                        <img id="mo-preview-img" src="" alt="preview"/>
+                                        <div class="inv-preview-bar">
+                                            <span class="inv-fname" id="mo-fname">—</span>
+                                            <span class="inv-status" id="mo-inv-status"></span>
+                                            <button type="button" class="inv-view-btn" id="mo-view-btn" style="display:none"><i class="bi bi-eye"></i> View</button>
+                                            <button type="button" class="inv-remove-btn" id="mo-remove-btn"><i class="bi bi-x-lg"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div><label class="form-label">Notes</label><textarea class="form-control" name="notes" rows="2" placeholder="Optional notes"></textarea></div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save Entry</button>
+                                <button type="button" class="btn btn-secondary" id="mo-cancel-btn" style="display:none"><i class="bi bi-x-lg"></i> Cancel</button>
+                            </div>
+                            <p class="form-feedback" id="materialOutward-msg"></p>
+                        </form>
+                    </div></div>
+
+                    <!-- ✅ FIX 8: Table thead now has Type + Qty columns (14 cols total) -->
+                    <div class="card-table">
+                        <div class="table-toolbar">
+                            <span class="table-toolbar-title">Outward Entries</span>
+                            <div class="toolbar-search">
+                                <div class="search-input-wrap"><i class="bi bi-search si-icon"></i><input type="text" id="outward-search" placeholder="Search type, client…" class="search-input"/></div>
+                                <button class="btn btn-sm btn-secondary" data-action="clear-outward-search"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                            <span class="table-count-badge" id="outward-count-badge"></span>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="table-modern">
+                                <thead><tr><th>#</th><th>Material</th><th>Client</th><th>Use</th><th>Vehicle</th><th>Driver</th><th>Date</th><th>Type</th><th>Qty</th><th>Net kg</th><th>Rate</th><th>Total ₹</th><th>Invoice</th><th class="th-actions">Actions</th></tr></thead>
+                                <tbody id="table-materialOutwards"><tr><td colspan="14" class="table-loading">Loading</td></tr></tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer-note"><i class="bi bi-info-circle"></i></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════
+                 VENDORS
+            ══════════════════════════════════════ -->
+            <section class="content-panel d-none" id="panel-suppliers">
+                <div class="panel-header">
+                    <div><h2 class="panel-title">Vendor Onboarding</h2><p class="panel-desc">Register and manage your supplier / vendor network</p></div>
+                    <button class="btn btn-outline-primary btn-sm" data-action="reload-suppliers"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+                </div>
+                <div class="panel-grid">
+                    <div class="card-form"><div class="card-body">
+                        <h3 class="card-form-title">Add Vendor</h3>
+                        <form id="form-supplier" class="form-fields">
+                            <div class="form-section-title">Business Info</div>
+                            <div><label class="form-label">Entity Name <span class="req">*</span></label><input class="form-control" name="supplierName" placeholder="Company / entity name" required/></div>
+                            <div><label class="form-label">Individual Name</label><input class="form-control" name="individualName" placeholder="Contact person name"/></div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">Vendor Type</label>
+                                    <!-- ✅ FIX 9: Added Pyrolysis Oil vendor type -->
+                                    <select class="form-select" name="vendorType">
+                                        <option value="">— Select —</option>
+                                        <option value="PYROLYSIS_OIL">Pyrolysis Oil</option>
+                                        <option value="CRUMB_RUBBER">Crumb Rubber</option>
+                                        <option value="WOOD">Wood</option>
+                                        <option value="OVERHEADS">Overheads</option>
+                                    </select>
+                                </div>
+                                <div><label class="form-label">Entity Status</label>
+                                    <select class="form-select" name="entityStatus">
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="INACTIVE">Inactive</option>
+                                        <option value="SUSPENDED">Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-section-title">GST Details</div>
+                            <div><label class="form-label">GST Applicable</label>
+                                <div class="toggle-group">
+                                    <label class="toggle-option"><input type="radio" name="gstApplicable" value="YES" checked/><span>Yes</span></label>
+                                    <label class="toggle-option"><input type="radio" name="gstApplicable" value="NO"/><span>No</span></label>
+                                </div>
+                            </div>
+                            <div id="supplier-gst-block">
+                                <label class="form-label">GST Number</label>
+                                <input class="form-control" id="supplier-gst" name="gstNo" placeholder="e.g. 27ABCDE1234F1Z5" maxlength="15" style="text-transform:uppercase"/>
+                            </div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">State<span class="auto-badge">Auto</span></label><input class="form-control" id="supplier-state" placeholder="Auto from GST" readonly/></div>
+                                <div><label class="form-label">Entity Type<span class="auto-badge">Auto</span></label><input class="form-control" id="supplier-entity-type-auto" placeholder="Auto from GST" readonly/></div>
+                            </div>
+                            <div class="form-section-title">Contact</div>
+                            <div><label class="form-label">Mobile</label><input class="form-control" name="mobileNo" placeholder="Mobile number"/></div>
+                            <div><label class="form-label">Email</label><input class="form-control" name="email" type="email" placeholder="Email address"/></div>
+                            <div><label class="form-label">Address</label><textarea class="form-control" name="address" rows="2" placeholder="Full address"></textarea></div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save Vendor</button>
+                                <button type="button" class="btn btn-secondary" id="supplier-cancel-btn" style="display:none"><i class="bi bi-x-lg"></i> Cancel</button>
+                            </div>
+                            <p class="form-feedback" id="supplier-msg"></p>
+                        </form>
+                    </div></div>
+
+                    <div class="card-table">
+                        <div class="table-toolbar">
+                            <span class="table-toolbar-title">Vendors</span>
+                            <div class="toolbar-search">
+                                <div class="search-input-wrap"><i class="bi bi-search si-icon"></i><input class="search-input" id="supplier-search" placeholder="Search by name…"/></div>
+                                <button class="btn btn-sm btn-secondary" data-action="search-suppliers"><i class="bi bi-search"></i></button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="table-modern">
+                                <thead><tr><th>#</th><th>Entity Name</th><th>Individual</th><th>Mobile</th> <th>Email</th><th>GST</th><th>State</th><th>Status</th><th class="th-actions">Actions</th></tr></thead>
+                                <tbody id="table-suppliers"><tr><td colspan="8" class="table-loading">Loading</td></tr></tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer-note"><i class="bi bi-info-circle"></i> Showing latest 5 entries.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════
+                 CLIENTS
+            ══════════════════════════════════════ -->
+            <section class="content-panel d-none" id="panel-clients">
+                <div class="panel-header">
+                    <div><h2 class="panel-title">Client Onboarding</h2><p class="panel-desc">Register and manage clients</p></div>
+                    <button class="btn btn-outline-primary btn-sm" data-action="reload-clients"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+                </div>
+                <div class="panel-grid">
+                    <div class="card-form"><div class="card-body">
+                        <h3 class="card-form-title">Add Client</h3>
+                        <form id="form-client" class="form-fields">
+                            <div class="form-section-title">Business Info</div>
+                            <div><label class="form-label">Entity Name <span class="req">*</span></label><input class="form-control" name="clientName" placeholder="Company / entity name" required/></div>
+                            <div><label class="form-label">Individual Name</label><input class="form-control" name="individualName" placeholder="Contact person name"/></div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">Client Type</label>
+                                    <select class="form-select" name="clientType">
+                                        <option value="">— Select —</option>
+                                        <option value="PYROLYSIS_OIL">Pyrolysis Oil</option>
+                                        <option value="CARBON">Carbon</option>
+                                        <option value="STEEL">Steel</option>
+                                    </select>
+                                </div>
+                                <div><label class="form-label">Entity Status</label>
+                                    <select class="form-select" name="entityStatus">
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="INACTIVE">Inactive</option>
+                                        <option value="SUSPENDED">Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-section-title">GST Details</div>
+                            <div><label class="form-label">GST Applicable</label>
+                                <div class="toggle-group">
+                                    <label class="toggle-option"><input type="radio" name="gstApplicable" value="YES" checked/><span>Yes</span></label>
+                                    <label class="toggle-option"><input type="radio" name="gstApplicable" value="NO"/><span>No</span></label>
+                                </div>
+                            </div>
+                            <div id="client-gst-block">
+                                <label class="form-label">GST Number</label>
+                                <input class="form-control" id="client-gst" name="gstNo" placeholder="e.g. 27ABCDE1234F1Z5" maxlength="15" style="text-transform:uppercase"/>
+                            </div>
+                            <div class="form-row-2">
+                                <div><label class="form-label">State<span class="auto-badge">Auto</span></label><input class="form-control" id="client-state" placeholder="Auto from GST" readonly/></div>
+                                <div><label class="form-label">Entity Type<span class="auto-badge">Auto</span></label><input class="form-control" id="client-entity-type-auto" placeholder="Auto from GST" readonly/></div>
+                            </div>
+                            <div class="form-section-title">Contact</div>
+                            <div><label class="form-label">Mobile</label><input class="form-control" name="mobileNo" placeholder="Mobile number"/></div>
+                            <div><label class="form-label">Email</label><input class="form-control" name="email" type="email" placeholder="Email address"/></div>
+                            <div><label class="form-label">Address</label><textarea class="form-control" name="address" rows="2" placeholder="Full address"></textarea></div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save Client</button>
+                                <button type="button" class="btn btn-secondary" id="client-cancel-btn" style="display:none"><i class="bi bi-x-lg"></i> Cancel</button>
+                            </div>
+                            <p class="form-feedback" id="client-msg"></p>
+                        </form>
+                    </div></div>
+
+                    <div class="card-table">
+                        <div class="table-toolbar">
+                            <span class="table-toolbar-title">Clients</span>
+                            <div class="toolbar-search">
+                                <div class="search-input-wrap"><i class="bi bi-search si-icon"></i><input class="search-input" id="client-search" placeholder="Search by name…"/></div>
+                                <button class="btn btn-sm btn-secondary" data-action="search-clients"><i class="bi bi-search"></i></button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="table-modern">
+                                <thead><tr><th>#</th><th>Entity Name</th><th>Individual</th><th>Mobile</th> <th>Email</th><th>GST</th><th>State</th><th>Status</th><th class="th-actions">Actions</th></tr></thead>
+                                <tbody id="table-clients"><tr><td colspan="8" class="table-loading">Loading</td></tr></tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer-note"><i class="bi bi-info-circle"></i> Showing latest 5 entries.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════
+                 USES — Admin only
+            ══════════════════════════════════════ -->
+            <section class="content-panel d-none" id="panel-uses">
+                <div class="panel-header">
+                    <div><h2 class="panel-title">Uses</h2><p class="panel-desc">Define material usage categories</p></div>
+                    <button class="btn btn-outline-primary btn-sm" data-action="reload-uses"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+                </div>
+                <div class="panel-grid">
+                    <div class="card-form"><div class="card-body">
+                        <h3 class="card-form-title">Add Use</h3>
+                        <form id="form-use" class="form-fields">
+                            <div><label class="form-label">Name <span class="req">*</span></label><input class="form-control" name="useName" placeholder="Use name" required/></div>
+                            <div><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2" placeholder="Optional description"></textarea></div>
+                            <div class="form-actions"><button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save</button></div>
+                            <p class="form-feedback" id="use-msg"></p>
+                        </form>
+                    </div></div>
+
+                    <div class="card-table">
+                        <div class="table-toolbar">
+                            <span class="table-toolbar-title">Uses</span>
+                            <div class="toolbar-search">
+                                <div class="search-input-wrap"><i class="bi bi-search si-icon"></i><input class="search-input" id="use-search" placeholder="Search by name…"/></div>
+                                <button class="btn btn-sm btn-secondary" data-action="search-uses"><i class="bi bi-search"></i></button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="table-modern">
+                                <thead><tr><th>#</th><th>Name</th><th>Description</th><th class="th-actions">Actions</th></tr></thead>
+                                <tbody id="table-uses"><tr><td colspan="4" class="table-loading">Loading</td></tr></tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer-note"><i class="bi bi-info-circle"></i> Showing latest 5 entries.</div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<script src="app.js"></script>
+<script>
+    /* ── Role-based UI: hide Uses + Reports for non-admin ── */
+    (function() {
+        function getRole() {
+            const stored = localStorage.getItem('role');
+            if (stored && stored.trim() !== '') return stored.trim();
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return '';
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role || payload.roles || payload.authorities || payload.auth || '';
+            } catch(e) { return ''; }
+        }
+        // ✅ FIX 7: MASTER → ACCOUNT
+        function isAdminOrMaster() {
+            const raw = String(getRole()).toUpperCase().trim();
+            return raw==='ADMIN'||raw==='ACCOUNT'||raw==='ROLE_ADMIN'||raw==='ROLE_ACCOUNT';
+        }
+        const isAdmin = isAdminOrMaster();
+
+        const reportsSection = document.getElementById('nav-reports-section');
+        if (reportsSection) reportsSection.style.display = isAdmin ? '' : 'none';
+
+        const adminSection = document.getElementById('nav-admin-section');
+        if (adminSection) adminSection.style.display = isAdmin ? '' : 'none';
+
+        const usesLi = document.getElementById('nav-uses-li');
+        if (usesLi) usesLi.style.display = isAdmin ? '' : 'none';
+
+        if (!isAdmin) {
+            const usesPanel = document.getElementById('panel-uses');
+            if (usesPanel) usesPanel.remove();
+        }
+    })();
+
+    /* ── Mobile sidebar toggle ── */
+    (function() {
+        var toggle   = document.getElementById('sidebar-toggle');
+        var sidebar  = document.querySelector('.app-sidebar');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        if (!toggle || !sidebar || !backdrop) return;
+        function open()  { sidebar.classList.add('open');    backdrop.classList.add('show');    document.body.style.overflow='hidden'; }
+        function close() { sidebar.classList.remove('open'); backdrop.classList.remove('show'); document.body.style.overflow=''; }
+        toggle.addEventListener('click', open);
+        backdrop.addEventListener('click', close);
+        document.querySelectorAll('.app-sidebar .nav-link').forEach(function(link) {
+            link.addEventListener('click', function() { if (window.innerWidth <= 900) close(); });
+        });
+        document.addEventListener('keydown', function(e) { if (e.key==='Escape') close(); });
+    })();
+</script>
+</body>
+</html>

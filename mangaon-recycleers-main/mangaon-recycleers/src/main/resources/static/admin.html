@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>User Management · Mangaon Recyclers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="app.css"/>
+    <style>
+        :root {
+          --bg:      #070b12;
+          --bg1:     #0c1220;
+          --bg2:     #111827;
+          --bg3:     #161f30;
+          --bg4:     #1c2840;
+          --border:  rgba(255,255,255,.07);
+          --border2: rgba(255,255,255,.13);
+          --ink:     #f0f4ff;
+          --ink2:    #a8b4cc;
+          --ink3:    #5c6a82;
+          --accent:  #3b82f6;
+          --mono:    'JetBrains Mono', monospace;
+          --display: 'Outfit', sans-serif;
+          --r:       10px;
+          --r2:      16px;
+          --c-account:  #a78bfa;
+          --c-admin:    #60a5fa;
+          --c-operator: #fbbf24;
+          --c-user:     #34d399;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          background: var(--bg);
+          color: var(--ink);
+          font-family: var(--display);
+          font-size: 14px;
+          min-height: 100vh;
+          background-image:
+            linear-gradient(rgba(59,130,246,.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,.025) 1px, transparent 1px);
+          background-size: 32px 32px;
+        }
+        .app-shell   { display: flex; min-height: 100vh; }
+        .app-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .app-main    { flex: 1; padding: 1.5rem 2rem 2.5rem; overflow-y: auto; }
+        .app-sidebar { background: var(--bg1) !important; border-right: 1px solid var(--border) !important; }
+        .app-topbar  { background: rgba(7,11,18,.85) !important; border-bottom: 1px solid var(--border) !important; backdrop-filter: blur(12px); }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4,1fr);
+          gap: .75rem;
+          margin-bottom: 1.625rem;
+        }
+        .stat-card {
+          position: relative;
+          background: var(--bg1);
+          border: 1px solid var(--border);
+          border-radius: var(--r2);
+          padding: 1.1rem 1.2rem 1rem;
+          overflow: hidden;
+          transition: transform .2s, box-shadow .2s;
+          cursor: default;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          border-radius: var(--r2) var(--r2) 0 0;
+        }
+        .stat-card::after {
+          content: '';
+          position: absolute;
+          top: -40px; right: -40px;
+          width: 110px; height: 110px;
+          border-radius: 50%;
+          opacity: .055;
+          pointer-events: none;
+        }
+        .stat-label {
+          font-family: var(--mono);
+          font-size: .6rem;
+          font-weight: 500;
+          letter-spacing: .1em;
+          text-transform: uppercase;
+          color: var(--ink3);
+          margin-bottom: .55rem;
+        }
+        .stat-val {
+          font-family: var(--display);
+          font-size: 2.25rem;
+          font-weight: 800;
+          line-height: 1;
+          letter-spacing: -.05em;
+        }
+        .stat-icon {
+          position: absolute;
+          bottom: .875rem; right: 1rem;
+          font-size: 1.6rem;
+          opacity: .07;
+        }
+        .sc-account::before  { background: linear-gradient(90deg,#a78bfa,#8b5cf6); }
+        .sc-account::after   { background: #8b5cf6; }
+        .sc-account:hover    { border-color: rgba(139,92,246,.3); box-shadow: 0 12px 32px rgba(139,92,246,.1); }
+        .sc-account .stat-val{ color: var(--c-account); }
+        .sc-admin::before   { background: linear-gradient(90deg,#60a5fa,#3b82f6); }
+        .sc-admin::after    { background: #3b82f6; }
+        .sc-admin:hover     { border-color: rgba(59,130,246,.3); box-shadow: 0 12px 32px rgba(59,130,246,.1); }
+        .sc-admin .stat-val { color: var(--c-admin); }
+        .sc-op::before      { background: linear-gradient(90deg,#fbbf24,#f59e0b); }
+        .sc-op::after       { background: #f59e0b; }
+        .sc-op:hover        { border-color: rgba(245,158,11,.3); box-shadow: 0 12px 32px rgba(245,158,11,.1); }
+        .sc-op .stat-val    { color: var(--c-operator); }
+        .sc-user::before    { background: linear-gradient(90deg,#34d399,#10b981); }
+        .sc-user::after     { background: #10b981; }
+        .sc-user:hover      { border-color: rgba(16,185,129,.3); box-shadow: 0 12px 32px rgba(16,185,129,.1); }
+        .sc-user .stat-val  { color: var(--c-user); }
+
+        .page-grid {
+          display: grid;
+          grid-template-columns: 340px 1fr;
+          gap: 1.25rem;
+          align-items: start;
+        }
+        .form-card {
+          background: var(--bg1);
+          border: 1px solid var(--border);
+          border-radius: var(--r2);
+          overflow: hidden;
+          position: sticky;
+          top: 1.5rem;
+        }
+        .form-card-head {
+          display: flex;
+          align-items: center;
+          gap: .75rem;
+          padding: .9rem 1.25rem;
+          border-bottom: 1px solid var(--border);
+          background: var(--bg2);
+        }
+        .form-card-icon {
+          width: 30px; height: 30px;
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: .85rem;
+          flex-shrink: 0;
+          background: linear-gradient(135deg,#6366f1,#3b82f6);
+          color: #fff;
+          transition: background .3s;
+        }
+        .form-card-icon.editing { background: linear-gradient(135deg,#f59e0b,#ef4444); }
+        .form-card-title { font-size: .9rem; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+        .form-card-body { padding: 1.25rem; }
+        .field { margin-bottom: 1rem; }
+        .field:last-child { margin-bottom: 0; }
+        .field-label {
+          display: block;
+          font-family: var(--mono);
+          font-size: .62rem;
+          font-weight: 600;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: var(--ink3);
+          margin-bottom: .4rem;
+        }
+        .field-label .req { color: #f43f5e; margin-left: 2px; }
+        .field-input {
+          width: 100%;
+          background: var(--bg3);
+          border: 1px solid var(--border2);
+          border-radius: var(--r);
+          padding: .6rem .875rem;
+          font-family: var(--display);
+          font-size: .855rem;
+          color: var(--ink);
+          transition: border-color .15s, box-shadow .15s;
+          outline: none;
+        }
+        .field-input::placeholder { color: var(--ink3); }
+        .field-input:focus {
+          border-color: rgba(99,102,241,.5);
+          box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+        }
+        .field-hint { font-size: .7rem; color: var(--ink3); margin-top: .3rem; font-family: var(--mono); }
+        .field-hint.err { color: #f43f5e; }
+        .field-hint.ok  { color: #34d399; }
+        .role-select-wrap { position: relative; }
+        .role-select-wrap select { appearance: none; padding-right: 2.5rem; cursor: pointer; }
+        .role-select-arrow {
+          position: absolute;
+          right: .75rem; top: 50%;
+          transform: translateY(-50%);
+          pointer-events: none;
+          color: var(--ink3);
+          font-size: .75rem;
+        }
+        .form-actions { display: flex; gap: .625rem; margin-top: 1.25rem; }
+        .btn-primary {
+          flex: 1;
+          display: flex; align-items: center; justify-content: center; gap: .4rem;
+          padding: .65rem 1rem;
+          background: linear-gradient(135deg,#6366f1,#3b82f6);
+          border: none; border-radius: var(--r);
+          color: #fff; font-family: var(--display); font-size: .855rem; font-weight: 600;
+          cursor: pointer; transition: opacity .15s, transform .15s;
+        }
+        .btn-primary:hover  { opacity: .88; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-cancel {
+          display: flex; align-items: center; justify-content: center; gap: .35rem;
+          padding: .65rem .875rem;
+          background: transparent;
+          border: 1px solid var(--border2); border-radius: var(--r);
+          color: var(--ink2); font-family: var(--display); font-size: .855rem; font-weight: 500;
+          cursor: pointer; transition: all .15s; white-space: nowrap;
+        }
+        .btn-cancel:hover { border-color: #f43f5e; color: #f43f5e; background: rgba(244,63,94,.07); }
+
+        .table-card {
+          background: var(--bg1);
+          border: 1px solid var(--border);
+          border-radius: var(--r2);
+          overflow: hidden;
+        }
+        .table-head {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: .875rem 1.25rem;
+          border-bottom: 1px solid var(--border);
+          background: var(--bg2);
+          gap: .75rem; flex-wrap: wrap;
+        }
+        .table-head-left { display: flex; align-items: center; gap: .75rem; }
+        .table-head-title { font-size: .9rem; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+        .total-badge {
+          font-family: var(--mono); font-size: .65rem; font-weight: 600;
+          padding: .18rem .55rem; border-radius: 20px;
+          background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.2);
+        }
+        .filter-row { display: flex; gap: .375rem; flex-wrap: wrap; align-items: center; }
+        .chip {
+          padding: .25rem .75rem; border-radius: 20px;
+          font-family: var(--mono); font-size: .63rem; font-weight: 600;
+          letter-spacing: .04em; text-transform: uppercase;
+          border: 1px solid var(--border2); background: transparent; color: var(--ink3);
+          cursor: pointer; transition: all .13s; white-space: nowrap;
+        }
+        .chip:hover { color: var(--ink2); border-color: rgba(255,255,255,.2); }
+        .chip.active-all      { background: rgba(99,102,241,.15);  color: #818cf8;          border-color: rgba(99,102,241,.3); }
+        .chip.active-ACCOUNT  { background: rgba(167,139,250,.15); color: var(--c-account); border-color: rgba(167,139,250,.35); }
+        .chip.active-ADMIN    { background: rgba(96,165,250,.15);  color: var(--c-admin);   border-color: rgba(96,165,250,.35); }
+        .chip.active-OPERATOR { background: rgba(251,191,36,.15);  color: var(--c-operator);border-color: rgba(251,191,36,.35); }
+        .chip.active-USER     { background: rgba(52,211,153,.15);  color: var(--c-user);    border-color: rgba(52,211,153,.35); }
+        .btn-reload {
+          display: flex; align-items: center; gap: .3rem;
+          padding: .3rem .7rem; font-family: var(--mono); font-size: .65rem; font-weight: 500;
+          border: 1px solid var(--border2); border-radius: 7px;
+          background: var(--bg3); color: var(--ink2); cursor: pointer; transition: all .13s; white-space: nowrap;
+        }
+        .btn-reload:hover { border-color: var(--accent); color: var(--ink); }
+        .tbl-wrap { overflow-x: auto; }
+        .tbl { width: 100%; border-collapse: collapse; }
+        .tbl th {
+          font-family: var(--mono); font-size: .6rem; font-weight: 600;
+          letter-spacing: .1em; text-transform: uppercase; color: var(--ink3);
+          padding: .65rem 1rem; border-bottom: 1px solid var(--border);
+          text-align: left; background: var(--bg2); white-space: nowrap;
+        }
+        .tbl th.th-right { text-align: right; }
+        .tbl td {
+          padding: .7rem 1rem; border-bottom: 1px solid var(--border);
+          vertical-align: middle; font-size: .84rem; color: var(--ink2);
+        }
+        .tbl tr:last-child td { border-bottom: none; }
+        .tbl tr { transition: background .12s; }
+        .tbl tr:hover td { background: rgba(255,255,255,.025); }
+        .tbl tr.row-editing td { background: rgba(245,158,11,.04); }
+        .cell-id { font-family: var(--mono); font-size: .72rem; color: var(--ink3); }
+        .cell-user { display: flex; align-items: center; gap: .55rem; }
+        .user-avatar {
+          width: 28px; height: 28px; border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-family: var(--mono); font-size: .65rem; font-weight: 700;
+          flex-shrink: 0; text-transform: uppercase;
+        }
+        .avatar-account  { background: rgba(167,139,250,.2); color: var(--c-account); }
+        .avatar-admin    { background: rgba(96,165,250,.2);  color: var(--c-admin); }
+        .avatar-operator { background: rgba(251,191,36,.2);  color: var(--c-operator); }
+        .avatar-user     { background: rgba(52,211,153,.2);  color: var(--c-user); }
+        .cell-username { font-weight: 600; color: var(--ink); font-size: .84rem; }
+        .role-badge {
+          display: inline-flex; align-items: center; gap: .3rem;
+          padding: .2rem .6rem; border-radius: 6px;
+          font-family: var(--mono); font-size: .63rem; font-weight: 600;
+          letter-spacing: .04em; text-transform: uppercase;
+          border: 1px solid transparent; white-space: nowrap;
+        }
+        .role-badge i { font-size: .55rem; }
+        .rb-ACCOUNT  { background: rgba(167,139,250,.12); color: var(--c-account); border-color: rgba(167,139,250,.22); }
+        .rb-ADMIN    { background: rgba(96,165,250,.12);  color: var(--c-admin);   border-color: rgba(96,165,250,.22); }
+        .rb-OPERATOR { background: rgba(251,191,36,.12);  color: var(--c-operator);border-color: rgba(251,191,36,.22); }
+        .rb-USER     { background: rgba(52,211,153,.12);  color: var(--c-user);    border-color: rgba(52,211,153,.22); }
+        .cell-actions { display: flex; gap: .35rem; justify-content: flex-end; }
+        .btn-edit {
+          display: flex; align-items: center; gap: .25rem;
+          padding: .28rem .65rem; font-family: var(--mono); font-size: .65rem; font-weight: 500;
+          border: 1px solid rgba(99,102,241,.3); border-radius: 6px;
+          background: rgba(99,102,241,.07); color: #818cf8; cursor: pointer; transition: all .13s;
+        }
+        .btn-edit:hover { background: rgba(99,102,241,.18); border-color: #6366f1; }
+        .btn-del {
+          display: flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px;
+          border: 1px solid rgba(244,63,94,.25); border-radius: 6px;
+          background: rgba(244,63,94,.06); color: #f43f5e;
+          cursor: pointer; transition: all .13s; font-size: .8rem;
+        }
+        .btn-del:hover { background: rgba(244,63,94,.18); border-color: #f43f5e; }
+        .tbl-state { text-align: center; padding: 3rem 1rem; color: var(--ink3); }
+        .tbl-state i { font-size: 2rem; display: block; margin-bottom: .75rem; opacity: .2; }
+        .tbl-state span { font-size: .84rem; }
+        .toast-msg {
+          position: fixed; bottom: 1.5rem; right: 1.5rem;
+          padding: .75rem 1.125rem; border-radius: var(--r);
+          font-size: .82rem; font-weight: 500; z-index: 9999;
+          opacity: 0; transform: translateY(8px); transition: all .25s;
+          pointer-events: none; max-width: 340px;
+        }
+        .toast-msg.show    { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .toast-msg.error   { background: rgba(244,63,94,.92);  color: #fff; }
+        .toast-msg.success { background: rgba(16,185,129,.92); color: #fff; }
+        .role-legend-item {
+          display: flex; align-items: center; gap: .5rem;
+          padding: .45rem .75rem; margin: 2px 0;
+          background: rgba(255,255,255,.02); border-radius: 7px;
+          border: 1px solid rgba(255,255,255,.04);
+        }
+        .role-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .rd-account  { background: var(--c-account);  box-shadow: 0 0 7px var(--c-account); }
+        .rd-admin    { background: var(--c-admin);    box-shadow: 0 0 7px var(--c-admin); }
+        .rd-operator { background: var(--c-operator); box-shadow: 0 0 7px var(--c-operator); }
+        .rd-user     { background: var(--c-user);     box-shadow: 0 0 7px var(--c-user); }
+        .role-legend-text {
+          font-family: var(--mono); font-size: .62rem;
+          color: rgba(255,255,255,.38); text-transform: uppercase; letter-spacing: .04em;
+        }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        .fade-up { animation: fadeUp .35s ease both; }
+
+        @media (max-width: 1100px) {
+          .page-grid  { grid-template-columns: 1fr; }
+          .form-card  { position: static; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+          .app-main        { padding: .875rem 1rem 2rem; }
+          .stats-grid      { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+          .stat-val        { font-size: 1.75rem; }
+          .table-head      { flex-direction: column; align-items: flex-start; gap: .5rem; }
+          .filter-row      { gap: .2rem; }
+          .chip            { padding: .2rem .5rem; font-size: .58rem; }
+          .tbl th, .tbl td { padding: .5rem .625rem; font-size: .78rem; }
+          .cell-actions    { gap: .2rem; }
+          .btn-edit        { padding: .2rem .45rem; font-size: .62rem; }
+          .btn-del         { width: 24px; height: 24px; font-size: .72rem; }
+          .form-card-body  { padding: 1rem; }
+          .field           { margin-bottom: .75rem; }
+          .app-sidebar {
+            position: fixed !important; left: -260px; top: 0; bottom: 0;
+            z-index: 10000; width: 240px !important; transition: left .25s ease;
+          }
+          .app-sidebar.open { left: 0 !important; box-shadow: 4px 0 32px rgba(0,0,0,.6); }
+          .sidebar-backdrop {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.5); z-index: 9999; backdrop-filter: blur(2px);
+          }
+          .sidebar-backdrop.show { display: block; }
+          .app-content { width: 100%; margin-left: 0 !important; }
+          .topbar-menu-btn {
+            display: flex !important; align-items: center; justify-content: center;
+            width: 36px; height: 36px;
+            border: 1px solid var(--border2); border-radius: 8px;
+            background: var(--bg3); color: var(--ink2);
+            cursor: pointer; font-size: 1.05rem; flex-shrink: 0; margin-right: .5rem;
+          }
+          .topbar-menu-btn:hover { border-color: var(--accent); color: var(--ink); }
+        }
+        @media (max-width: 480px) {
+          .stats-grid       { grid-template-columns: 1fr 1fr; gap: .4rem; }
+          .stat-val         { font-size: 1.45rem; }
+          .stat-card        { padding: .75rem .875rem .7rem; }
+          .form-actions     { flex-direction: column; }
+          .btn-primary      { width: 100%; }
+          .btn-cancel       { width: 100%; justify-content: center; }
+          .tbl th:first-child, .tbl td:first-child { display: none; }
+          .tbl th, .tbl td  { padding: .4rem .45rem; font-size: .74rem; }
+          .topbar-subtitle  { display: none; }
+          .topbar-title     { font-size: .92rem; }
+          .topbar-actions .badge-pill span { display: none; }
+          .btn-logout span  { display: none; }
+        }
+        @media (min-width: 769px) {
+          .topbar-menu-btn  { display: none !important; }
+          .sidebar-backdrop { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+<div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+<div class="app-shell">
+
+    <aside class="app-sidebar">
+        <div class="app-brand">
+            <div class="brand-mark"><i class="bi bi-recycle"></i></div>
+            <div class="brand-text">
+                <span class="brand-title">Mangaon Recyclers</span>
+                <span class="brand-subtitle">Admin Panel</span>
+            </div>
+        </div>
+        <nav class="app-nav" aria-label="Main navigation">
+            <span class="nav-label">Navigation</span>
+            <ul class="nav-list">
+                <li><a href="/index.html" class="nav-link"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin.html" class="nav-link active"><i class="bi bi-people"></i><span>User Management</span></a></li>
+            </ul>
+            <span class="nav-label" style="margin-top:1.25rem;">Role Legend</span>
+            <div class="role-legend-item"><span class="role-dot rd-account"></span><span class="role-legend-text">ACCOUNT · Full control</span></div>
+            <div class="role-legend-item"><span class="role-dot rd-admin"></span><span class="role-legend-text">ADMIN · User &amp; content</span></div>
+            <div class="role-legend-item"><span class="role-dot rd-operator"></span><span class="role-legend-text">OPERATOR · Daily ops</span></div>
+            <div class="role-legend-item"><span class="role-dot rd-user"></span><span class="role-legend-text">USER · Basic access</span></div>
+        </nav>
+        <div class="app-sidebar-footer">
+            <a href="/index.html" style="display:flex;align-items:center;gap:.4rem;color:var(--ink3);font-size:.75rem;font-family:var(--mono);text-decoration:none;padding:.4rem;border-radius:6px;transition:color .14s;">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </aside>
+
+    <div class="app-content">
+        <header class="app-topbar">
+            <button class="topbar-menu-btn" id="sidebar-toggle" aria-label="Open menu">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="topbar-heading">
+                <h1 class="topbar-title">User Management</h1>
+                <p class="topbar-subtitle">Create, edit and manage system accounts</p>
+            </div>
+            <div class="topbar-actions">
+                <span class="badge-pill"><i class="bi bi-person-circle"></i> <span id="topbar-username">Admin</span></span>
+                <button class="btn-logout" id="logout-btn"><i class="bi bi-box-arrow-right"></i> <span>Logout</span></button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div id="toast" class="toast-msg" role="status" aria-live="polite"></div>
+
+            <div class="stats-grid fade-up" style="animation-delay:.05s">
+                <div class="stat-card sc-account">
+                    <div class="stat-label">Account</div>
+                    <div class="stat-val" id="cnt-ACCOUNT">—</div>
+                    <i class="bi bi-gem stat-icon"></i>
+                </div>
+                <div class="stat-card sc-admin">
+                    <div class="stat-label">Admin</div>
+                    <div class="stat-val" id="cnt-ADMIN">—</div>
+                    <i class="bi bi-shield-check stat-icon"></i>
+                </div>
+                <div class="stat-card sc-op">
+                    <div class="stat-label">Operator</div>
+                    <div class="stat-val" id="cnt-OPERATOR">—</div>
+                    <i class="bi bi-tools stat-icon"></i>
+                </div>
+                <div class="stat-card sc-user">
+                    <div class="stat-label">User</div>
+                    <div class="stat-val" id="cnt-USER">—</div>
+                    <i class="bi bi-person stat-icon"></i>
+                </div>
+            </div>
+
+            <div class="page-grid">
+                <div class="form-card fade-up" style="animation-delay:.1s">
+                    <div class="form-card-head">
+                        <div class="form-card-icon" id="form-icon"><i class="bi bi-person-plus"></i></div>
+                        <span class="form-card-title" id="form-title">Create Account</span>
+                    </div>
+                    <div class="form-card-body">
+                        <form id="user-form" autocomplete="off">
+                            <div class="field">
+                                <label class="field-label" for="u-username">Username <span class="req">*</span></label>
+                                <input id="u-username" class="field-input" name="username" placeholder="e.g. john_doe" autocomplete="off" required/>
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="u-password">Password <span class="req" id="pw-req">*</span></label>
+                                <input id="u-password" class="field-input" name="password" type="password" placeholder="Min. 6 characters" autocomplete="new-password"/>
+                                <p class="field-hint" id="pw-hint">Min. 6 characters required</p>
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="u-role">Role <span class="req">*</span></label>
+                                <div class="role-select-wrap">
+                                    <select id="u-role" class="field-input" name="role" required>
+                                        <option value="">— Select role —</option>
+                                        <option value="ACCOUNT">ACCOUNT — Full system control</option>
+                                        <option value="ADMIN">ADMIN — User &amp; content admin</option>
+                                        <option value="OPERATOR">OPERATOR — Day-to-day operations</option>
+                                        <option value="USER">USER — Basic read access</option>
+                                    </select>
+                                    <i class="bi bi-chevron-down role-select-arrow"></i>
+                                </div>
+                            </div>
+                            <p class="field-hint" id="form-msg" style="margin-top:.5rem;font-size:.75rem;"></p>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary" id="submit-btn">
+                                    <i class="bi bi-person-plus"></i> <span id="submit-label">Create Account</span>
+                                </button>
+                                <button type="button" class="btn-cancel" id="cancel-btn" style="display:none;">
+                                    <i class="bi bi-x-lg"></i> Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-card fade-up" style="animation-delay:.15s">
+                    <div class="table-head">
+                        <div class="table-head-left">
+                            <span class="table-head-title">All Accounts</span>
+                            <span class="total-badge" id="total-badge">0</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+                            <div class="filter-row" id="filter-row">
+                                <button class="chip active-all" data-role="all">All</button>
+                                <button class="chip" data-role="ACCOUNT">Account</button>
+                                <button class="chip" data-role="ADMIN">Admin</button>
+                                <button class="chip" data-role="OPERATOR">Operator</button>
+                                <button class="chip" data-role="USER">User</button>
+                            </div>
+                            <button class="btn-reload" id="reload-btn"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table class="tbl">
+                            <thead>
+                            <tr>
+                                <th style="width:54px">ID</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th class="th-right" style="width:110px">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tbl-body">
+                            <tr><td colspan="4"><div class="tbl-state"><i class="bi bi-arrow-repeat"></i><span>Loading accounts…</span></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    /* ════════════════════════════════
+       AUTH — check token exists
+    ════════════════════════════════ */
+    function getToken() { return localStorage.getItem('token'); }
+    (function(){ if (!getToken()) location.href = '/login.html'; })();
+    const _uname = localStorage.getItem('username') || 'Admin';
+    document.getElementById('topbar-username').textContent = _uname.charAt(0).toUpperCase() + _uname.slice(1);
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        ['token','username','role'].forEach(k => localStorage.removeItem(k));
+        location.href = '/login.html';
+    });
+
+    /* ════════════════════════════════
+       HTTP HELPER
+       FIX: Only redirect to login on 401 (expired token).
+       403 = forbidden (show error, stay on page).
+       204 No Content = success (don't try to parse JSON).
+       Other non-ok = show error message, do NOT logout.
+    ════════════════════════════════ */
+    async function http(url, opts = {}) {
+        const token = getToken();
+        const res = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+                ...(opts.headers || {}),
+            },
+            ...opts,
+        });
+
+        // 401 = token expired → must re-login
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            location.href = '/login.html';
+            return;
+        }
+
+        // 204 No Content (e.g. successful DELETE) — no body to parse
+        if (res.status === 204) return null;
+
+        // 403 Forbidden — show error but DO NOT logout
+        if (res.status === 403) {
+            throw new Error('Access denied (403). You do not have permission for this action.');
+        }
+
+        // All other non-ok responses
+        if (!res.ok) {
+            let msg = res.status + ' ' + res.statusText;
+            try {
+                const j = await res.json();
+                msg = j.error || j.message || msg;
+            } catch(e) {
+                try { msg = await res.text() || msg; } catch(e2) {}
+            }
+            throw new Error(msg);
+        }
+
+        // Try to parse JSON — if response has no body, return null
+        const text = await res.text();
+        if (!text || text.trim() === '') return null;
+        try {
+            return JSON.parse(text);
+        } catch(e) {
+            return null;
+        }
+    }
+
+    /* ════════════════════════════════
+       TOAST
+    ════════════════════════════════ */
+    function toast(msg, type = 'success') {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = 'toast-msg ' + type + ' show';
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 3800);
+    }
+    function setMsg(msg, type = '') {
+        const el = document.getElementById('form-msg');
+        el.textContent = msg;
+        el.className = 'field-hint' + (type === 'error' ? ' err' : type === 'ok' ? ' ok' : '');
+    }
+
+    /* ════════════════════════════════
+       STATE
+    ════════════════════════════════ */
+    let editingId     = null;
+    let currentFilter = 'all';
+    let allUsers      = [];
+
+    /* ════════════════════════════════
+       HELPERS
+    ════════════════════════════════ */
+    function esc(s) {
+        if (!s) return '';
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function roleBadge(role) {
+        const icons = { ACCOUNT:'gem', ADMIN:'shield-check', OPERATOR:'tools', USER:'person' };
+        const icon  = icons[role] || 'person';
+        return `<span class="role-badge rb-${role}"><i class="bi bi-${icon}"></i>${role}</span>`;
+    }
+
+    function avatarLetter(username, role) {
+        const cls = { ACCOUNT:'avatar-account', ADMIN:'avatar-admin', OPERATOR:'avatar-operator', USER:'avatar-user' };
+        const letter = (username || '?')[0].toUpperCase();
+        return `<div class="user-avatar ${cls[role] || 'avatar-user'}">${letter}</div>`;
+    }
+
+    /* ════════════════════════════════
+       STATS
+    ════════════════════════════════ */
+    function updateStats(users) {
+        const c = { ACCOUNT:0, ADMIN:0, OPERATOR:0, USER:0 };
+        users.forEach(u => { if (c[u.role] !== undefined) c[u.role]++; });
+        ['ACCOUNT','ADMIN','OPERATOR','USER'].forEach(r => {
+            const el = document.getElementById('cnt-'+r);
+            if (el) el.textContent = c[r];
+        });
+        const tb = document.getElementById('total-badge');
+        if (tb) tb.textContent = users.length;
+    }
+
+    /* ════════════════════════════════
+       RENDER TABLE
+    ════════════════════════════════ */
+    function renderTable(users) {
+        const tbody = document.getElementById('tbl-body');
+        if (!users.length) {
+            tbody.innerHTML = `<tr><td colspan="4"><div class="tbl-state"><i class="bi bi-inbox"></i><span>No accounts found</span></div></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = '';
+        users.forEach(u => {
+            const tr = document.createElement('tr');
+            if (editingId === u.id) tr.classList.add('row-editing');
+            tr.innerHTML =
+                `<td><span class="cell-id">#${esc(String(u.id))}</span></td>` +
+                `<td><div class="cell-user">${avatarLetter(u.username,u.role)}<span class="cell-username">${esc(u.username)}</span></div></td>` +
+                `<td>${roleBadge(u.role)}</td>` +
+                `<td><div class="cell-actions"></div></td>`;
+
+            const actions = tr.querySelector('.cell-actions');
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-edit';
+            editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+            editBtn.onclick = () => startEdit(u);
+            actions.appendChild(editBtn);
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-del';
+            delBtn.innerHTML = '<i class="bi bi-trash3"></i>';
+            delBtn.title = 'Delete ' + u.username;
+            delBtn.onclick = () => deleteUser(u.id, u.username);
+            actions.appendChild(delBtn);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    /* ════════════════════════════════
+       LOAD
+    ════════════════════════════════ */
+    async function loadUsers() {
+        const tbody = document.getElementById('tbl-body');
+        tbody.innerHTML = `<tr><td colspan="4"><div class="tbl-state"><i class="bi bi-arrow-repeat" style="animation:spin .7s linear infinite"></i><span>Loading accounts…</span></div></td></tr>`;
+        try {
+            allUsers = await http('/api/users') || [];
+            updateStats(allUsers);
+            applyFilter();
+        } catch(err) {
+            tbody.innerHTML = `<tr><td colspan="4"><div class="tbl-state"><i class="bi bi-exclamation-circle"></i><span>${esc(err.message || 'Failed to load users')}</span></div></td></tr>`;
+            toast(err.message || 'Failed to load users', 'error');
+        }
+    }
+
+    /* ════════════════════════════════
+       FILTER
+    ════════════════════════════════ */
+    function applyFilter() {
+        const filtered = currentFilter === 'all'
+            ? allUsers
+            : allUsers.filter(u => u.role === currentFilter);
+        renderTable(filtered);
+    }
+
+    document.getElementById('filter-row').addEventListener('click', e => {
+        const chip = e.target.closest('.chip');
+        if (!chip) return;
+        document.querySelectorAll('.chip').forEach(c => { c.className = 'chip'; });
+        currentFilter = chip.dataset.role;
+        chip.classList.add(currentFilter === 'all' ? 'active-all' : 'active-' + currentFilter);
+        applyFilter();
+    });
+
+    /* ════════════════════════════════
+       EDIT
+    ════════════════════════════════ */
+    function startEdit(u) {
+        editingId = u.id;
+        document.getElementById('u-username').value = u.username;
+        document.getElementById('u-password').value = '';
+        document.getElementById('u-role').value     = u.role;
+        document.getElementById('form-title').textContent   = 'Edit Account';
+        document.getElementById('submit-label').textContent = 'Update Account';
+        document.getElementById('form-icon').className      = 'form-card-icon editing';
+        document.getElementById('form-icon').innerHTML      = '<i class="bi bi-pencil"></i>';
+        document.getElementById('cancel-btn').style.display = 'flex';
+        document.getElementById('pw-hint').textContent      = 'Leave blank to keep current password';
+        document.getElementById('pw-req').style.display     = 'none';
+        setMsg('Editing: ' + u.username, 'ok');
+        renderTable(currentFilter === 'all' ? allUsers : allUsers.filter(u2 => u2.role === currentFilter));
+        document.querySelector('.form-card').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    function cancelEdit() {
+        editingId = null;
+        document.getElementById('user-form').reset();
+        document.getElementById('form-title').textContent   = 'Create Account';
+        document.getElementById('submit-label').textContent = 'Create Account';
+        document.getElementById('form-icon').className      = 'form-card-icon';
+        document.getElementById('form-icon').innerHTML      = '<i class="bi bi-person-plus"></i>';
+        document.getElementById('cancel-btn').style.display = 'none';
+        document.getElementById('pw-hint').textContent      = 'Min. 6 characters required';
+        document.getElementById('pw-req').style.display     = '';
+        setMsg('');
+        renderTable(currentFilter === 'all' ? allUsers : allUsers.filter(u => u.role === currentFilter));
+    }
+
+    /* ════════════════════════════════
+       DELETE
+       FIX: Catch error properly — do NOT let it bubble up and trigger logout.
+       DELETE returns 204 No Content on success — http() handles that correctly now.
+    ════════════════════════════════ */
+    async function deleteUser(id, username) {
+        if (!confirm(`Delete account "${username}"?\n\nThis action cannot be undone.`)) return;
+        try {
+            await http(`/api/users/${id}`, { method: 'DELETE' });
+            toast(`Account "${username}" deleted successfully.`);
+            if (editingId === id) cancelEdit();
+            await loadUsers();
+        } catch(err) {
+            // Show the error as a toast — do NOT logout
+            toast(err.message || 'Delete failed. Please try again.', 'error');
+        }
+    }
+
+    /* ════════════════════════════════
+       FORM SUBMIT
+    ════════════════════════════════ */
+    document.getElementById('user-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        setMsg('');
+
+        const username = document.getElementById('u-username').value.trim();
+        const password = document.getElementById('u-password').value;
+        const role     = document.getElementById('u-role').value;
+
+        if (!username)                                    { setMsg('Username is required', 'error'); return; }
+        if (!editingId && !password)                      { setMsg('Password is required', 'error'); return; }
+        if (!editingId && password.length < 6)            { setMsg('Password must be at least 6 characters', 'error'); return; }
+        if (editingId && password && password.length < 6) { setMsg('New password must be at least 6 characters', 'error'); return; }
+        if (!role)                                        { setMsg('Please select a role', 'error'); return; }
+
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true; btn.style.opacity = '.6';
+
+        const payload = { username, password: password || null, role };
+
+        try {
+            if (editingId) {
+                await http(`/api/users/${editingId}`, { method:'PUT', body: JSON.stringify(payload) });
+                toast(`Account "${username}" updated successfully.`);
+                cancelEdit();
+            } else {
+                await http('/api/users', { method:'POST', body: JSON.stringify(payload) });
+                toast(`Account "${username}" created successfully.`);
+                document.getElementById('user-form').reset();
+                setMsg('Account created successfully.', 'ok');
+            }
+            await loadUsers();
+        } catch(err) {
+            setMsg(err.message || 'Save failed', 'error');
+            toast(err.message || 'Save failed', 'error');
+        } finally {
+            btn.disabled = false; btn.style.opacity = '';
+        }
+    });
+
+    document.getElementById('cancel-btn').addEventListener('click', cancelEdit);
+    document.getElementById('reload-btn').addEventListener('click', loadUsers);
+
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+
+    loadUsers();
+
+    /* Mobile sidebar toggle */
+    (function() {
+        var toggle   = document.getElementById('sidebar-toggle');
+        var sidebar  = document.querySelector('.app-sidebar');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        if (!toggle || !sidebar || !backdrop) return;
+        function openSidebar()  { sidebar.classList.add('open');    backdrop.classList.add('show');    document.body.style.overflow='hidden'; }
+        function closeSidebar() { sidebar.classList.remove('open'); backdrop.classList.remove('show'); document.body.style.overflow=''; }
+        toggle.addEventListener('click', openSidebar);
+        backdrop.addEventListener('click', closeSidebar);
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSidebar(); });
+    })();
+</script>
+</body>
+</html>
